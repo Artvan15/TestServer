@@ -1,30 +1,32 @@
 #include "myserver.h"
 
 myserver::myserver(QObject * parent):QTcpServer(parent){
-    if(this->listen(QHostAddress::Any), 5555){
-        qDebug() << "Listerning!";
+    if(!this->listen(QHostAddress::Any, 5555)){
+        qDebug() << "Error";
     }
     else{
-        qDebug() << "Not listerning!";
+        qDebug() << "Listening";
     }
 }
 
 void myserver::incomingConnection(qintptr socketDescriptor){
-    socket = new QTcpSocket(this); //create socket
-    socket->setSocketDescriptor(socketDescriptor); //unique number
+    qDebug() << socketDescriptor << " connecting";
+    MyThread *thread = new MyThread(socketDescriptor, this);
 
-    connect(socket, &QTcpSocket::readyRead, this, &myserver::sockRedy);
-    connect(socket, &QTcpSocket::disconnected, this, &myserver::sockDisc);
-
-    socket->write("You are connected!");
-    qDebug() << "Client " << socketDescriptor << " is connected";
+    connect(thread, &MyThread::finished, thread, &MyThread::deleteLater);
+    thread->start();
 }
 
-void myserver::sockRedy(){
+void myserver::sockReady(){
 
 }
 
 void myserver::sockDisc(){
     qDebug() << "Disconnect";
     socket->deleteLater(); //as soon as possible delete socket
+
+}
+
+void myserver::bytesWritten(qint64 bytes){
+    qDebug() << "We wrote " << bytes;
 }
